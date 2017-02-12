@@ -1,0 +1,95 @@
+#!/usr/bin/ruby
+
+require 'rubygems'
+require 'ftools'
+require 'exifr'
+require 'fileutils'
+
+$files_processed = 0
+
+def process_file(file_path, destination_dir, total_files)
+    if File.directory?(file_path)
+        crt_dir = Dir.new(file_path)
+        crt_dir.each do |file_name|
+            if file_name != '.' &&  file_name != '..'
+                process_file("#{crt_dir.path}/#{file_name}", destination_dir, total_files)
+            end
+        end
+    else
+        if File.fnmatch('*.jpg', file_path, File::FNM_CASEFOLD) || File.fnmatch('*.jpeg', file_path, File::FNM_CASEFOLD)
+            picture = nil
+            begin
+                picture = EXIFR::JPEG.new(file_path)
+            rescue
+            end
+            if picture != nil && picture.exif != nil
+                file_date = picture.date_time
+            else
+                f = File.new(file_path)
+                file_date = f.mtime
+            end
+        end
+        if file_date == nil
+            f = File.new(file_path)
+            file_date = f.mtime
+        end
+        year_dir =  destination_dir + file_date.strftime("/%Y")
+        month_dir = destination_dir + file_date.strftime("/%Y/%m")
+        day_dir = destination_dir + file_date.strftime("/%Y/%m/%d")
+        new_file_name = day_dir + "/" + File.basename(file_path)
+        begin
+            if ARGV[0] != 'show'
+                Dir.mkdir(year_dir) unless File.exists?(year_dir)
+                Dir.mkdir(month_dir) unless File.exists?(month_dir)
+                Dir.mkdir(day_dir) unless File.exists?(day_dir)
+            end
+            $files_processed += 1
+            puts "[" + $files_processed.to_s + "/" + total_files.to_s + "] " + file_path + " -> " + new_file_name
+            if File.exists?(new_file_name)
+                puts "Skipped; file already exists in destination"
+            else
+                if ARGV[0] == 'move'
+                    FileUtils.mv(file_path, new_file_name)
+                elsif ARGV[0] == 'copy'
+                    FileUtils.cp(file_path, new_file_name)
+                end
+                if ARGV[0] != 'show'
+                    FileUtils.touch new_file_name, :mtime => file_date
+                end
+            end
+        end
+    end
+end
+
+if ARGV.length != 3
+    puts "Usage: bydate copy|move|show <source_dir_or_file> <dest_dir>"
+    exit
+end
+
+if ARGV[0] !='copy' && ARGV[0] != 'move' && ARGV[0] != 'show'
+    puts "No such option: #{ARGV[0]}"
+    exit
+end
+
+if not File.exists?(ARGV[1])
+    puts "No such file or directory: #{ARGV[1]}"
+    exit
+end
+
+
+if not File.directory?(ARGV[2])
+    puts "No such directory: #{ARGV[2]}"
+    exit
+end
+
+if ARGV[1]==ARGV[2]
+    puts "Source and destination must be different"
+    exit
+end
+
+total_files = 1
+if File.directory?(ARGV[1])
+    total_files = Dir.glob(File.join(ARGV[1], '**', '*')).select { |file| File.file?(file) }.count
+end
+
+process_file(ARGV[1], ARGV[2], total_files)
