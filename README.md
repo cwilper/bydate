@@ -39,9 +39,8 @@ bydate show SOURCE_DIR_OR_FILE DEST_DIR
   For example, files whose date is Jan 1st 2017 will be copied or moved
   into `dest_dir/2017/01/01/`
 * To determine the authoritative date of the file, the metadata inside
-  the file is examined first. If it's a JPEG and has a date in the `EXIF`
-  metadata, that will be used. Otherwise, the filesystem date
-  (`mtime`) will be used.
+  the file is examined first. If it has `EXIF` metadata, that will be used.
+  Otherwise, the filesystem date (`mtime`) will be used.
 * After copying or moving it, the filesystem date will be set
   on the destination file according to the authoritative date as
   determined above.
@@ -51,21 +50,26 @@ bydate show SOURCE_DIR_OR_FILE DEST_DIR
 
 ## Installation
 
-You need ruby. Sorry about that. If you don't know what ruby is, ask one of
-your nerd friends to help. You can find out which of your friends are nerds
-by gathering them into a room and casually asking, "Have you seen the latest
-XKCD?". Whoever turns their head fastest is going to be your best bet.
+Make sure you have the dependencies:
 
-Anyway, I recommend installing ruby via [RVM](https://rvm.io/rvm/install)
-if you don't have it yet.
+* You must have `bash` version 4 or greater.
+* `exiftool` must be in your PATH
+* `jq` must be in your path
 
-Once ruby is installed, you'll need to grab a couple prerequisites:
-
-```
-gem install ftools
-gem install exifr
-```
+On macos, these can all be installed via brew. On other OSes, you
+probably already have a new enough version of `bash`, and the
+other dependencies are pretty straightforward to install manually
+if your usual package repository doesn't have them.
 
 Then you can put this script somewhere easy to execute, like
 `/usr/local/bin/bydate`, and make sure it's executable and in your
 `PATH`.
+
+## Version History
+
+* 2019-04-17
+  - Switched main script from ruby to bash, simplifying deployment.
+  - Now using `exiftool` for broader EXIF awareness (MOV, HEIC, etc.)
+
+* 2017-02-12
+  - Original version, required ruby

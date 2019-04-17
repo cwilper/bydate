@@ -1,0 +1,75 @@
+#!/usr/bin/env bash
+
+main() {
+  process_args "$@"
+  check_dependencies
+  process_files
+  exit 0
+}
+
+process_args() {
+  [[ $1 = -h ]] && {
+    echo "Usage: bydate copy|move|show <source_dir_or_file> <dest_dir>"
+    exit 0
+  }
+  [[ $# = 3 ]] || die "Three args required"
+  cmd=$1
+  src=$2
+  dst=$3
+  [[ $cmd =~ ^(show|copy|move)$ ]] || die "No such command: $cmd; expected show, copy, or move"
+  [[ -f "$src" || -d "$src" ]] || die "No such file or directory: $src"
+  [[ -d "$src" ]] && src="$(cd "$src"; pwd;)"
+  [[ -d "$dst" ]] || {
+    if [[ $cmd =~ (copy|move) ]]; then
+      mkdir -p "$dst"
+      [[ $? = 0 ]] || die "Unable to create directory: $dst"
+    fi
+  }
+  dst="$(cd "$dst"; pwd;)"
+  [[ $src = $dst ]] && die "Source and destination must be different"
+}
+
+check_dependencies() {
+  [[ $BASH_VERSION =~ ^[123]\. ]] && die "bash version is too old, 4+ required"
+  jq --version > /dev/null 2>&1 || die "jq not found in PATH"
+  exiftool -ver > /dev/null 2>&1 || die "exiftool not found in PATH"
+}
+
+process_files() {
+  local total=$(find "$src" -type f | wc -l | awk '{print $1}')
+  local count=0
+  while read -d $'\0' src_file; do
+    count=$((count+1))
+    set_filedate_and_touchstamp "$src_file"
+    local dst_file="$dst/$filedate/$(basename $src_file)"
+    echo "[$count/$total] $src_file => $dst_file"
+    if [[ -e $dst_file ]]; then
+      echo "WARNING: Skipped $src_file; destination exists"
+    elif [[ $cmd =~ (copy|move) ]]; then
+      local dst_dir="$(dirname $dst_file)"
+      mkdir -p "$dst_dir" || die "Failed to create directory $dst_dir"
+      if [[ $cmd = copy ]]; then
+        cp "$src_file" "$dst_file" || die "Failed to copy $src_file to $dst_file"
+      elif [[ $cmd = move ]]; then
+        mv "$src_file" "$dst_file" || die "Failed to move $src_file to $dst_file"
+      fi
+      touch -mt $touchstamp "$dst_file" || die "Failed to touch $dst_file"
+    fi
+  done < <(find $src -type f -print0)
+}
+
+set_filedate_and_touchstamp() {
+  local fdatetimes=($(exiftool -json "$1" | jq -r '.[0] | (.CreateDate + " " + .FileModifyDate)'))
+  local fdate=${fdatetimes[0]}
+  filedate="${fdate//:/\/}"
+  local tstamp=${fdatetimes[0]}${fdatetimes[1]}
+  touchstamp=${tstamp//:/}
+  touchstamp=${touchstamp:0:12}.${touchstamp:12:2}
+}
+
+die() {
+  [[ $1 ]] && >&2 echo "bydate: $1 (-h for help)"
+  exit 1
+}
+
+main "$@"
