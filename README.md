@@ -65,11 +65,21 @@ Then you can put this script somewhere easy to execute, like
 `/usr/local/bin/bydate`, and make sure it's executable and in your
 `PATH`.
 
-## Version History
+## Wishlist
+
+* Improve speed by sending batches of files to exiftool, rather
+  than one at a time.
+* For each file, show whether EXIF or filesystem metadata was used
+  to determine the date.
+
+## History
 
 * 2019-04-17
   - Switched main script from ruby to bash, simplifying deployment.
   - Now using `exiftool` for broader EXIF awareness (MOV, HEIC, etc.)
+    This version is noticeably slower due to every file being
+    examined by exiftool.
 
 * 2017-02-12
   - Original version, required ruby
+  - Only supported EXIF metadata on JPEG files
