@@ -69,6 +69,8 @@ Then you can put this script somewhere easy to execute, like
 
 * Improve speed by sending batches of files to exiftool, rather
   than one at a time.
+* Leverage the built-in renaming/moving file support in
+  exiftool: https://www.sno.phy.queensu.ca/~phil/exiftool/filename.html
 * For each file, show whether EXIF or filesystem metadata was used
   to determine the date.
 
