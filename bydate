@@ -63,7 +63,7 @@ process_files() {
 set_filedate_and_touchstamp() {
   local fdatetimes=($(exiftool -json "$1" | jq -r '.[0] | (.CreateDate + " " + .FileModifyDate)'))
   local fdate=${fdatetimes[0]}
-  filedate="${fdate//:/\/}"
+  filedate="${fdate//://}"
   local tstamp=${fdatetimes[0]}${fdatetimes[1]}
   touchstamp=${tstamp//:/}
   touchstamp=${touchstamp:0:12}.${touchstamp:12:2}
