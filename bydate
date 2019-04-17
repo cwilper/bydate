@@ -19,13 +19,13 @@ process_args() {
   [[ $cmd =~ ^(show|copy|move)$ ]] || die "No such command: $cmd; expected show, copy, or move"
   [[ -f "$src" || -d "$src" ]] || die "No such file or directory: $src"
   [[ -d "$src" ]] && src="$(cd "$src"; pwd;)"
-  [[ -d "$dst" ]] || {
-    if [[ $cmd =~ (copy|move) ]]; then
+  [[ $cmd =~ (copy|move) ]] && {
+    [[ -d "$dst" ]] || {
       mkdir -p "$dst"
       [[ $? = 0 ]] || die "Unable to create directory: $dst"
-    fi
+    }
+    dst="$(cd "$dst"; pwd;)"
   }
-  dst="$(cd "$dst"; pwd;)"
   [[ $src = $dst ]] && die "Source and destination must be different"
 }
 
@@ -47,7 +47,9 @@ process_files() {
       echo "WARNING: Skipped $src_file; destination exists"
     elif [[ $cmd =~ (copy|move) ]]; then
       local dst_dir="$(dirname $dst_file)"
-      mkdir -p "$dst_dir" || die "Failed to create directory $dst_dir"
+      [[ -d "$dst_dir" ]] || {
+        mkdir -p "$dst_dir" || die "Failed to create directory $dst_dir"
+      }
       if [[ $cmd = copy ]]; then
         cp "$src_file" "$dst_file" || die "Failed to copy $src_file to $dst_file"
       elif [[ $cmd = move ]]; then
