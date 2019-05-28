@@ -67,7 +67,7 @@ Then you can put this script somewhere easy to execute, like
 
 ## Wishlist
 
-* Improve speed by sending batches of files to exiftool, rather
+* <span style="color:green; font-weight:bold;">Improve speed</span> by sending batches of files to exiftool, rather
   than one at a time.
 * Leverage the built-in renaming/moving file support in
   exiftool: https://www.sno.phy.queensu.ca/~phil/exiftool/filename.html
