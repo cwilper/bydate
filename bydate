@@ -38,15 +38,15 @@ check_dependencies() {
 process_files() {
   local total=$(find "$src" -type f | wc -l | awk '{print $1}')
   local count=0
-  while read -d $'\0' src_file; do
+  while IFS= read -r -d $'\0' src_file; do
     count=$((count+1))
     set_filedate_and_touchstamp "$src_file"
-    local dst_file="$dst/$filedate/$(basename $src_file)"
+    local dst_file="$dst/$filedate/$(basename "$src_file")"
     echo "[$count/$total] $src_file => $dst_file"
-    if [[ -e $dst_file ]]; then
+    if [[ -e "$dst_file" ]]; then
       echo "WARNING: Skipped $src_file; destination exists"
     elif [[ $cmd =~ (copy|move) ]]; then
-      local dst_dir="$(dirname $dst_file)"
+      local dst_dir="$(dirname "$dst_file")"
       [[ -d "$dst_dir" ]] || {
         mkdir -p "$dst_dir" || die "Failed to create directory $dst_dir"
       }
@@ -57,7 +57,7 @@ process_files() {
       fi
       touch -mt $touchstamp "$dst_file" || die "Failed to touch $dst_file"
     fi
-  done < <(find $src -type f -print0)
+  done < <(find "$src" -type f -print0)
 }
 
 set_filedate_and_touchstamp() {
