@@ -39,8 +39,9 @@ bydate show SOURCE_DIR_OR_FILE DEST_DIR
   For example, files whose date is Jan 1st 2017 will be copied or moved
   into `dest_dir/2017/01/01/`
 * To determine the authoritative date of the file, the metadata inside
-  the file is examined first. If it has `EXIF` metadata, that will be used.
-  Otherwise, the filesystem date (`mtime`) will be used.
+  the file is examined first. The `CreateDate` EXIF tag is used as the
+  primary source. If it is missing or invalid (e.g., year 0000), the
+  file's filesystem modification time (`mtime`) is used instead.
 * After copying or moving it, the filesystem date will be set
   on the destination file according to the authoritative date as
   determined above.
@@ -75,6 +76,14 @@ Then you can put this script somewhere easy to execute, like
   to determine the date.
 
 ## History
+
+* 2026-05-03
+  - Fixed handling of invalid/zero CreateDate values (e.g., `0000:00:00`)
+    from exiftool, which previously caused errors and incorrect directory
+    paths. Falls back to the file's filesystem modification time instead.
+  - Rewrote date extraction to avoid bash word-splitting bugs with timestamp
+    formats containing spaces. Now uses separate jq queries for each field.
+  - Handle spaces in filenames and paths correctly throughout the script.
 
 * 2019-04-17
   - Switched main script from ruby to bash, simplifying deployment.
