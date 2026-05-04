@@ -21,8 +21,7 @@ process_args() {
   [[ -d "$src" ]] && src="$(cd "$src"; pwd;)"
   [[ $cmd =~ (copy|move) ]] && {
     [[ -d "$dst" ]] || {
-      mkdir -p "$dst"
-      [[ $? = 0 ]] || die "Unable to create directory: $dst"
+      mkdir -p "$dst" || die "Unable to create directory: $dst"
     }
     dst="$(cd "$dst"; pwd;)"
   }
@@ -61,11 +60,24 @@ process_files() {
 }
 
 set_filedate_and_touchstamp() {
-  local fdatetimes=($(exiftool -json "$1" | jq -r '.[0] | (.CreateDate + " " + .FileModifyDate)'))
-  local fdate=${fdatetimes[0]}
-  filedate="${fdate//://}"
-  local tstamp=${fdatetimes[0]}${fdatetimes[1]}
-  touchstamp=${tstamp//:/}
+  local json
+  json=$(exiftool -json "$1")
+
+  local create_date file_modify_date
+  create_date=$(echo "$json" | jq -r '.[0].CreateDate // ""')
+  file_modify_date=$(echo "$json" | jq -r '.[0].FileModifyDate // ""')
+
+  # Check if CreateDate is invalid (year 0000 or empty)
+  local cdate="${create_date%% *}"
+  local fdate="${file_modify_date%% *}"
+  local year="${cdate:0:4}"
+  if [[ -z "$create_date" || "$year" == "0000" ]]; then
+    filedate="${fdate//://}"
+    touchstamp="${fdate//:/}${file_modify_date//:/}"
+  else
+    filedate="${cdate//://}"
+    touchstamp="${cdate//:/}${file_modify_date//:/}"
+  fi
   touchstamp=${touchstamp:0:12}.${touchstamp:12:2}
 }
 
